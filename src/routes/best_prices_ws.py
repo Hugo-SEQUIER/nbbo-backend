@@ -39,5 +39,6 @@ async def stream_random_prices():
         
         await asyncio.sleep(2)
 
-def start_price_stream():
+async def start_price_stream():
+    """Start the price streaming background task"""
     asyncio.create_task(stream_random_prices()) 
