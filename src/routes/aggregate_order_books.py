@@ -28,7 +28,7 @@ class OrderBookResponse(BaseModel):
     metadata: Dict[str, Any]
 
 LIST_COIN = [
-    "merrli:BTC", "sekaw:BTC"
+    "merrli:BTC", "sekaw:BTC", "btcx:BTC-FEUSD"
 ]
 
 @router.get("/aggregate-order-books", response_model=OrderBookResponse)
