@@ -9,7 +9,7 @@ from hyperliquid.utils import constants
 
 router = APIRouter()
 API_URL = constants.TESTNET_API_URL
-FREQUENCY = 3
+FREQUENCY = 3 #In seconds
 
 active_connections: List[WebSocket] = []
 
