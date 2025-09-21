@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .health import router as health_router
-from .get_order_books import router as order_books_router
+from .tests.get_order_books import router as order_books_router
 
 def register_routes(app: FastAPI):
     app.include_router(health_router)
