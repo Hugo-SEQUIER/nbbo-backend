@@ -1,6 +1,7 @@
 import sqlite3
 import json
 from datetime import datetime
+import time
 from typing import Optional, List, Dict, Any
 import os
 
@@ -68,17 +69,16 @@ class PriceDatabase:
                     (coin, dex, timestamp, best_ask, best_bid, spread, mid_price, raw_data)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
-                    data.get('coin'),  # "AGGREGATED"
-                    'BTC',
+                    data.get('coin'),  # "merrli:BTC" or "AGGREGATED"
+                    'AGGREGATED',
                     data.get('timestamp'),
                     data.get('best_ask'),
                     data.get('best_bid'),
                     data.get('spread'),
                     data.get('mid_price'),
-                    json.dumps(order_book_data)  # Store full data as JSON
+                    json.dumps(order_book_data)
                 ))
                 
-                # Check if row was inserted (rowcount > 0 means new insert)
                 success = cursor.rowcount > 0
                 conn.commit()
                 
@@ -94,7 +94,7 @@ class PriceDatabase:
             return False
     
     def get_snapshots(self, 
-                     coin: str, 
+                     coin: str = None, 
                      dex: str = None,
                      start_timestamp: int = None, 
                      end_timestamp: int = None,
@@ -103,7 +103,7 @@ class PriceDatabase:
         Retrieve price snapshots for a given coin and time range.
         
         Args:
-            coin: The coin symbol (e.g., "merrli:BTC")
+            coin: The coin symbol (e.g., "merrli:BTC") - optional, if None returns all
             dex: The DEX name (optional filter)
             start_timestamp: Start time in milliseconds
             end_timestamp: End time in milliseconds  
@@ -113,12 +113,16 @@ class PriceDatabase:
             List of snapshot dictionaries
         """
         with sqlite3.connect(self.db_path) as conn:
-            conn.row_factory = sqlite3.Row  # Enable column access by name
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             
-            # Build dynamic query
-            query = "SELECT * FROM price_snapshots WHERE coin = ?"
-            params = [coin]
+            # Build query dynamically
+            if coin:
+                query = "SELECT * FROM price_snapshots WHERE coin = ?"
+                params = [coin]
+            else:
+                query = "SELECT * FROM price_snapshots WHERE 1=1"
+                params = []
             
             if dex:
                 query += " AND dex = ?"
@@ -141,7 +145,6 @@ class PriceDatabase:
             cursor.execute(query, params)
             rows = cursor.fetchall()
             
-            # Convert to list of dictionaries
             return [dict(row) for row in rows]
     
     def get_latest_snapshot(self, coin: str, dex: str = None) -> Optional[Dict[str, Any]]:
@@ -171,12 +174,10 @@ class PriceDatabase:
         if not snapshots:
             return []
         
-        # Group snapshots into timeframe buckets
         timeframe_ms = timeframe_minutes * 60 * 1000
         candles = {}
         
         for snapshot in snapshots:
-            # Calculate which candle bucket this snapshot belongs to
             candle_start = (snapshot['timestamp'] // timeframe_ms) * timeframe_ms
             
             if candle_start not in candles:
@@ -186,20 +187,18 @@ class PriceDatabase:
                     'high': snapshot['best_ask'],
                     'low': snapshot['best_ask'],
                     'close': snapshot['best_ask'],
-                    'volume': 0,  # You'll need actual trade data for this
+                    'volume': 0,
                     'count': 0
                 }
             
             candle = candles[candle_start]
             price = snapshot['best_ask']
             
-            # Update OHLC
             candle['high'] = max(candle['high'], price)
             candle['low'] = min(candle['low'], price)
-            candle['close'] = price  # Last price in the period
+            candle['close'] = price
             candle['count'] += 1
         
-        # Return sorted candles
         return sorted(candles.values(), key=lambda x: x['timestamp'])
     
     def cleanup_old_data(self, days_to_keep: int = 30):
@@ -217,44 +216,3 @@ class PriceDatabase:
             
             print(f"Cleaned up {deleted_count} old snapshots")
             return deleted_count
-
-
-# Example usage and testing
-if __name__ == "__main__":
-    # Initialize database
-    db = PriceDatabase("price_data.db")
-    
-    # Example: Insert the sample data you provided
-    sample_data = {
-        "success": True,
-        "data": {
-            "coin": "merrli:BTC",
-            "timestamp": 1758422718903,
-            "bids": [
-                {"price": 111900, "size": 0.02494, "orders": 1},
-                {"price": 111850, "size": 0.0013, "orders": 1}
-            ],
-            "asks": [
-                {"price": 115900, "size": 0.00023, "orders": 1},
-                {"price": 119900, "size": 0.00073, "orders": 1}
-            ],
-            "best_bid": 111900,
-            "best_ask": 115900,
-            "spread": 4000,
-            "mid_price": 113900
-        }
-    }
-    
-    # Insert sample data
-    db.insert_snapshot(sample_data)
-    
-    # Query examples
-    print("\n--- Latest snapshot ---")
-    latest = db.get_latest_snapshot("merrli:BTC")
-    if latest:
-        print(f"Latest price: {latest['best_ask']} at {latest['timestamp']}")
-    
-    print("\n--- Calculate 1-hour candles ---")
-    candles = db.calculate_candles("merrli:BTC", timeframe_minutes=60)
-    for candle in candles:
-        print(f"Candle: O={candle['open']} H={candle['high']} L={candle['low']} C={candle['close']}")
