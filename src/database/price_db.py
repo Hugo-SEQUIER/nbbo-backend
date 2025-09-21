@@ -15,7 +15,6 @@ class PriceDatabase:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
-            # Create the price snapshots table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS price_snapshots (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +43,6 @@ class PriceDatabase:
             ''')
             
             conn.commit()
-            print(f"Database initialized at: {self.db_path}")
     
     def insert_snapshot(self, order_book_data: Dict[str, Any]) -> bool:
         """

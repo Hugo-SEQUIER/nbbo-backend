@@ -6,11 +6,13 @@ from typing import List, Dict, Any
 from .aggregate_order_books import _reconstruct_orderbook, _create_aggregated_orderbook
 from hyperliquid.info import Info
 from hyperliquid.utils import constants
+from ..database.price_db import PriceDatabase
 
 router = APIRouter()
 API_URL = constants.TESTNET_API_URL
-FREQUENCY = 3 #In seconds
+FREQUENCY = 2 #In seconds
 
+db = PriceDatabase()
 active_connections: List[WebSocket] = []
 
 @router.websocket("/ws/prices")
@@ -29,7 +31,7 @@ async def websocket_endpoint(websocket: WebSocket):
 async def stream_aggregated_order_books():
     """Stream aggregated order book data to all connected clients every 3 seconds"""
     print("Starting aggregated order book stream...")
-    LIST_COIN = ["merrli:BTC", "sekaw:BTC"]
+    LIST_COIN = ["merrli:BTC", "sekaw:BTC", "btcx:BTC-FEUSD"]
     last_orderbook = None
     
     while True:
@@ -38,6 +40,9 @@ async def stream_aggregated_order_books():
                 all_bids = []
                 all_asks = []
                 processed_coins = []
+                
+                # Track individual exchange data
+                exchange_data = {}
                 
                 # Aggregate order books from all coins
                 for coin in LIST_COIN:
@@ -62,8 +67,15 @@ async def stream_aggregated_order_books():
                         all_asks.extend(orderbook.asks)
                         processed_coins.append(coin)
                         
+                        # Store individual exchange data
+                        exchange_data[coin] = {
+                            "best_bid": orderbook.best_bid,
+                            "best_ask": orderbook.best_ask,
+                            "spread": orderbook.spread,
+                            "mid_price": orderbook.mid_price
+                        }
+                        
                     except Exception as e:
-                        # Log error but continue with other coins
                         print(f"Error processing coin {coin}: {e}")
                         continue
                 
@@ -86,7 +98,8 @@ async def stream_aggregated_order_books():
                         },
                         "metadata": {
                             "coins_processed": len(processed_coins),
-                            "total_coins": len(LIST_COIN)
+                            "total_coins": len(LIST_COIN),
+                            "individual_exchanges": exchange_data
                         }
                     }
                     
@@ -96,6 +109,12 @@ async def stream_aggregated_order_books():
                             await connection.send_text(json.dumps(message))
                         except:
                             active_connections.remove(connection)
+                    
+                    # Save to database
+                    try:
+                        db.insert_snapshot(message)
+                    except Exception as e:
+                        print(f"Database save error: {e}")
                     
                     last_orderbook = message
                     print(f"Sent aggregated order book to {len(active_connections)} clients (processed {len(processed_coins)}/{len(LIST_COIN)} coins)")

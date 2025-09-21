@@ -9,7 +9,7 @@ db = PriceDatabase()
 @router.get("/chart/{coin}")
 async def get_chart_data(
     coin: str,
-    timeframe: Optional[str] = Query("1h", description="Timeframe: 1h, 4h, 1d")
+    timeframe: Optional[str] = Query("15min", description="Timeframe: 1h, 4h, 1d")
 ):
     """
     Get chart data for a coin
