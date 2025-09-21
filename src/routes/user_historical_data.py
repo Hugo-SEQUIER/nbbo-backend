@@ -14,10 +14,10 @@ class UserHistoricalData(BaseModel):
 @router.get("/user-historical-data", response_model=UserHistoricalData)
 async def get_user_historical_data(
     address: str,
-    list_coins: str
+    list_coins: Optional[str] = None
 ):
     try:
-        list_coins = list_coins.split(",")
+        
         info = Info(API_URL, skip_ws=True)
         payload = {
             "type": "historicalOrders",
@@ -28,7 +28,13 @@ async def get_user_historical_data(
             data = info.post("/info", payload)
         except TypeError:
             data = info.post(payload)
-        
+        if list_coins:
+            list_coins = list_coins.split(",")
+        else:
+            return {
+                "success": True,
+                "data": data,
+            }
         filtered_data = [item for item in data if item["order"]["coin"] in list_coins]
     
         return {
