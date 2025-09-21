@@ -4,6 +4,8 @@ from .get_order_books import router as order_books_router
 from .best_prices_ws import router as websocket_router, start_price_stream
 from .chart_data import router as chart_router
 from .tests.test_db_data import router as test_db_router
+from .tests.get_order_books import router as order_books_router
+from .aggregate_order_books import router as aggregate_order_books_router
 
 def register_routes(app: FastAPI):
     app.include_router(health_router)
@@ -15,3 +17,6 @@ def register_routes(app: FastAPI):
     @app.on_event("startup")
     async def startup_event():
         start_price_stream()
+        
+    app.include_router(aggregate_order_books_router)
+
