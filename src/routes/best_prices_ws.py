@@ -25,6 +25,8 @@ async def stream_random_prices():
     """Stream random numbers to all connected clients every 2 seconds"""
     while True:
         if active_connections:
+            #TODO: Implement the actual prices and order books of the platform
+            
             random_price = round(random.uniform(100, 200), 2)
             
             for connection in active_connections[:]:
