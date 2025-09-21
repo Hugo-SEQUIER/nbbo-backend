@@ -70,7 +70,7 @@ async def insert_sample_data_current_time():
         sample_data = {
             "success": True,
             "data": {
-                "coin": "merrli:BTC",
+                "coin": "BTC",
                 "timestamp": current_timestamp,
                 "bids": [
                     {"price": 111900, "size": 0.02494, "orders": 1},

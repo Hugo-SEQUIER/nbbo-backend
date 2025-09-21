@@ -42,6 +42,9 @@ async def aggregate_order_books():
         all_asks = []
         processed_coins = []
         
+        # Track individual exchange data
+        exchange_data = {}
+        
         for coin in LIST_COIN:
             try:
                 info = Info(API_URL, skip_ws=True)
@@ -64,21 +67,31 @@ async def aggregate_order_books():
                 all_asks.extend(orderbook.asks)
                 processed_coins.append(coin)
                 
+                # Store individual exchange data
+                exchange_data[coin] = {
+                    "best_bid": orderbook.best_bid,
+                    "best_ask": orderbook.best_ask,
+                    "spread": orderbook.spread,
+                    "mid_price": orderbook.mid_price
+                }
+                
             except Exception as e:
-                # Log error but continue with other coins
                 print(f"Error processing coin {coin}: {e}")
                 continue
         
         if not processed_coins:
             raise HTTPException(status_code=500, detail="Failed to retrieve orderbook data for any coins")
         
-        # Create aggregated orderbook
         aggregated_orderbook = _create_aggregated_orderbook(all_bids, all_asks, processed_coins)
         
         return OrderBookResponse(
             success=True,
             data=aggregated_orderbook,
-            metadata={"coins_processed": len(processed_coins), "total_coins": len(LIST_COIN)}
+            metadata={
+                "coins_processed": len(processed_coins), 
+                "total_coins": len(LIST_COIN),
+                "individual_exchanges": exchange_data
+            }
         )
         
     except Exception as e:

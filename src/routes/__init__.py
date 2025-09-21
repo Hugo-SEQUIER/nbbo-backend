@@ -18,10 +18,12 @@ def register_routes(app: FastAPI):
     app.include_router(trades_router)
     app.include_router(user_historical_data_router)
     app.include_router(user_position_router)
+    
     @app.on_event("startup")
     async def startup_event():
-        start_price_stream()
+        await start_price_stream()
         await initialize_trade_stream()
+
         
     app.include_router(aggregate_order_books_router)
 

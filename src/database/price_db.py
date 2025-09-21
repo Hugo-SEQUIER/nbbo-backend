@@ -1,5 +1,4 @@
 import sqlite3
-import json
 from datetime import datetime
 import time
 from typing import Optional, List, Dict, Any
@@ -16,7 +15,6 @@ class PriceDatabase:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
-            # Create the price snapshots table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS price_snapshots (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +25,6 @@ class PriceDatabase:
                     best_bid REAL,
                     spread REAL,
                     mid_price REAL,
-                    raw_data TEXT,  -- JSON string of full order book data
                     created_at INTEGER DEFAULT (strftime('%s', 'now')),
                     
                     UNIQUE(coin, dex, timestamp)
@@ -46,7 +43,6 @@ class PriceDatabase:
             ''')
             
             conn.commit()
-            print(f"Database initialized at: {self.db_path}")
     
     def insert_snapshot(self, order_book_data: Dict[str, Any]) -> bool:
         """
@@ -66,8 +62,8 @@ class PriceDatabase:
                 
                 cursor.execute('''
                     INSERT OR IGNORE INTO price_snapshots 
-                    (coin, dex, timestamp, best_ask, best_bid, spread, mid_price, raw_data)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (coin, dex, timestamp, best_ask, best_bid, spread, mid_price)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     data.get('coin'),  # "merrli:BTC" or "AGGREGATED"
                     'AGGREGATED',
@@ -75,8 +71,7 @@ class PriceDatabase:
                     data.get('best_ask'),
                     data.get('best_bid'),
                     data.get('spread'),
-                    data.get('mid_price'),
-                    json.dumps(order_book_data)
+                    data.get('mid_price')
                 ))
                 
                 success = cursor.rowcount > 0
