@@ -1,7 +1,7 @@
-from flask import Blueprint
-from .health import bp as health_bp
+from fastapi import FastAPI
+from .health import router as health_router
+from .get_order_books import router as order_books_router
 
-def register_routes(app):
-    app.register_blueprint(health_bp)
-
-
+def register_routes(app: FastAPI):
+    app.include_router(health_router)
+    app.include_router(order_books_router)
