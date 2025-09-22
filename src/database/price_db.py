@@ -3,6 +3,8 @@ from datetime import datetime
 import time
 from typing import Optional, List, Dict, Any
 import os
+import logging
+logging.basicConfig(level=logging.INFO)
 
 class PriceDatabase:
     def __init__(self, db_path: str = "price_data.db"):
@@ -78,14 +80,14 @@ class PriceDatabase:
                 conn.commit()
                 
                 if success:
-                    print(f"Inserted snapshot for {data.get('coin')} at {data.get('timestamp')}")
+                    logging.info(f"Inserted snapshot for {data.get('coin')} at {data.get('timestamp')}")
                 else:
-                    print(f"Duplicate snapshot ignored for {data.get('coin')} at {data.get('timestamp')}")
+                    logging.info(f"Duplicate snapshot ignored for {data.get('coin')} at {data.get('timestamp')}")
                 
                 return success
                 
         except sqlite3.Error as e:
-            print(f"Database error: {e}")
+            logging.error(f"Database error: {e}")
             return False
     
     def get_snapshots(self, 
@@ -209,5 +211,5 @@ class PriceDatabase:
             deleted_count = cursor.rowcount
             conn.commit()
             
-            print(f"Cleaned up {deleted_count} old snapshots")
+            logging.info(f"Cleaned up {deleted_count} old snapshots")
             return deleted_count
