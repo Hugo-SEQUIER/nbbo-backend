@@ -25,7 +25,7 @@ async def get_user_position(
         try:
             data = info.post("/info", payload)
         except TypeError:
-            data = info.post(payload)
+            data = info.post("/info", payload)
         
         return {
             "success": True,
