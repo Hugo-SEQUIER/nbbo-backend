@@ -260,7 +260,7 @@ async def manage_websocket_connection():
             logging.error(f"Error in WebSocket management: {e}")
             await asyncio.sleep(5)  # Wait before retrying
         
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
 
 # Initialize the WebSocket connection when the module is imported
 async def initialize_trade_stream():
