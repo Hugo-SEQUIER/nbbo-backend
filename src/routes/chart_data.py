@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Query
 from src.database.price_db import PriceDatabase
 from datetime import datetime
 from typing import Optional
+import logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
 router = APIRouter()
 db = PriceDatabase()

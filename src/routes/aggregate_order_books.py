@@ -3,6 +3,8 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from hyperliquid.info import Info
 from hyperliquid.utils import constants
+import logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
 router = APIRouter()
 API_URL = constants.TESTNET_API_URL
@@ -76,7 +78,7 @@ async def aggregate_order_books():
                 }
                 
             except Exception as e:
-                print(f"Error processing coin {coin}: {e}")
+                logging.error(f"Error processing coin {coin}: {e}")
                 continue
         
         if not processed_coins:
