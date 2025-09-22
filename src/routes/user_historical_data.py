@@ -27,7 +27,7 @@ async def get_user_historical_data(
         try:
             data = info.post("/info", payload)
         except TypeError:
-            data = info.post(payload)
+            data = info.post("/info", payload)
         if list_coins:
             list_coins = list_coins.split(",")
         else:
