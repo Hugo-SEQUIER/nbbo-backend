@@ -7,6 +7,8 @@ from .aggregate_order_books import _reconstruct_orderbook, _create_aggregated_or
 from hyperliquid.info import Info
 from hyperliquid.utils import constants
 from ..database.price_db import PriceDatabase
+import logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 
 router = APIRouter()
 API_URL = constants.TESTNET_API_URL
@@ -19,18 +21,18 @@ active_connections: List[WebSocket] = []
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     active_connections.append(websocket)
-    print(f"Client connected. Total connections: {len(active_connections)}")
+    logging.info(f"Client connected. Total connections: {len(active_connections)}")
     
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         active_connections.remove(websocket)
-        print(f"Client disconnected. Total connections: {len(active_connections)}")
+        logging.info(f"Client disconnected. Total connections: {len(active_connections)}")
 
 async def stream_aggregated_order_books():
     """Stream aggregated order book data to all connected clients every 3 seconds"""
-    print("Starting aggregated order book stream...")
+    logging.info("Starting aggregated order book stream...")
     LIST_COIN = ["merrli:BTC", "sekaw:BTC", "btcx:BTC-FEUSD"]
     last_orderbook = None
     
@@ -76,7 +78,7 @@ async def stream_aggregated_order_books():
                         }
                         
                     except Exception as e:
-                        print(f"Error processing coin {coin}: {e}")
+                        logging.error(f"Error processing coin {coin}: {e}")
                         continue
                 
                 if processed_coins:
@@ -114,10 +116,10 @@ async def stream_aggregated_order_books():
                     try:
                         db.insert_snapshot(message)
                     except Exception as e:
-                        print(f"Database save error: {e}")
+                        logging.error(f"Database save error: {e}")
                     
                     last_orderbook = message
-                    print(f"Sent aggregated order book to {len(active_connections)} clients (processed {len(processed_coins)}/{len(LIST_COIN)} coins)")
+                    logging.info(f"Sent aggregated order book to {len(active_connections)} clients (processed {len(processed_coins)}/{len(LIST_COIN)} coins)")
                     
                 else:
                     # If no coins processed successfully, send last known data or error
@@ -133,12 +135,12 @@ async def stream_aggregated_order_books():
                                 await connection.send_text(json.dumps(error_message))
                             except:
                                 active_connections.remove(connection)
-                        print(f"Sent last known order book to {len(active_connections)} clients due to API failure")
+                        logging.info(f"Sent last known order book to {len(active_connections)} clients due to API failure")
                     else:
-                        print("No order book data available and no previous data to send")
+                        logging.info("No order book data available and no previous data to send")
                         
             except Exception as e:
-                print(f"Error in aggregated order book streaming: {e}")
+                logging.error(f"Error in aggregated order book streaming: {e}")
                 # Send error message to clients
                 for connection in active_connections[:]:
                     try:
@@ -154,6 +156,6 @@ async def stream_aggregated_order_books():
 
 async def start_price_stream():
     """Start the aggregated order book streaming background task"""
-    print("Starting price stream background task...")
+    logging.info("Starting price stream background task...")
     task = asyncio.create_task(stream_aggregated_order_books())
     return task 
