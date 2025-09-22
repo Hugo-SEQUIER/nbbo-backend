@@ -10,7 +10,7 @@ from ..database.price_db import PriceDatabase
 
 router = APIRouter()
 API_URL = constants.TESTNET_API_URL
-FREQUENCY = 2 #In seconds
+FREQUENCY = 3 #In seconds
 
 db = PriceDatabase()
 active_connections: List[WebSocket] = []
