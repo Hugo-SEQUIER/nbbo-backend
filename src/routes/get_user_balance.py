@@ -19,6 +19,7 @@ async def get_user_balance(
 ):
     try:
         dexs = dexs.split(",")
+        dexs.append("")
         data = {"success": True, "data": {}}
         total_account_value = 0
         for dex in dexs:
